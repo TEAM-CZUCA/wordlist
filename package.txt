@@ -1,0 +1,77 @@
+# Termux Basic Setup
+termux-setup-storage
+pkg update -y
+pkg upgrade -y
+apt update -y
+
+# Repositories
+pkg install root-repo -y
+pkg install unstable-repo -y
+pkg install x11-repo -y
+
+# Programming Languages
+pkg install python -y
+pkg install python2 -y
+pkg install python3 -y
+pkg install ruby -y
+pkg install php -y
+pkg install perl -y
+pkg install java -y
+pkg install nodejs -y
+pkg install golang -y
+pkg install bash -y
+pkg install fish -y
+pkg install clang -y
+
+# Essential Utilities
+pkg install git -y
+pkg install curl -y
+pkg install wget -y
+pkg install tsu -y
+pkg install sudo -y
+pkg install proot -y
+pkg install termux-api -y
+pkg install termux-tools -y
+pkg install coreutils -y
+pkg install util-linux -y
+pkg install zip -y
+pkg install unzip -y
+pkg install tar -y
+pkg install unrar -y
+pkg install p7zip -y
+
+# Hacking & Network Tools
+pkg install openssh -y
+pkg install openssl -y
+pkg install nmap -y
+pkg install macchanger -y
+pkg install hydra -y
+pkg install bmon -y
+pkg install net-tools -y
+pkg install whois -y
+pkg install dnsutils -y
+pkg install tor -y
+pkg install w3m -y
+
+# Editors & Monitor
+pkg install nano -y
+pkg install vim -y
+pkg install htop -y
+pkg install neofetch -y
+
+# Fun Tools
+pkg install figlet -y
+pkg install toilet -y
+pkg install cmatrix -y
+pkg install cowsay -y
+pkg install mpv -y
+pkg install espeak -y
+
+# Python PIP & Ruby GEM Packages
+pip install --upgrade pip
+pip install requests rich bs4 httpx future futures pycryptodomex setuptools cryptography
+pip2 install mechanize requests bs4 futures pycryptodomex cryptography
+gem install lolcat
+
+# Finalizing
+ssh-keygen -q -t rsa -N "" -f ~/.ssh/id_rsa
